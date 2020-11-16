@@ -1,0 +1,35 @@
+version: '3.7'
+
+services:
+  web:
+    container_name: bookject_web
+    build: ./app
+    command: python manage.py runserver 0.0.0.0:8000 --settings=config.settings.local
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./app/:/usr/src/app/
+    ports:
+      - 8000:8000
+    env_file: ./env/dev/.env
+    depends_on:
+      - db
+  db:
+    container_name: bookject_db
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file: ./env/dev/.env
+  pgadmin:
+    container_name: bookject_pgadmin
+    image: dpage/pgadmin4
+    depends_on:
+      - db
+    env_file: ./env/dev/.pgadmin
+    volumes:
+      - pgadmin:/root/.pgadmin
+    ports:
+      - "5050:8000"
+volumes:
+  postgres_data:
+  pgadmin:
