@@ -200,6 +200,8 @@ class BookDownloader:
         try:
             if len(published_date_str) == 4:
                 pattern = '%Y'
+            elif len(published_date_str) == 7:
+                pattern = '%Y-%m'
             else:
                 pattern, self.book_dict['exact_date'] = '%Y-%m-%d', True
 
