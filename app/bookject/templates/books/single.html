@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+<h2>Bookject</h2>
+<h3>Simple book API</h3>
+<a href="{% url 'books:list' %}">Back to list of books</a><br><br>
+
+<table>
+    <tr>
+        <td><img src="{{ book.thumbnail }}"></td>
+        <td>
+            Title: {{ book.title }}<br>
+            Author(s):
+            {% if book.authors  %}
+                {% for author in book.authors %}
+                    {{ author.name}}<br>
+                {% endfor %}
+            {% else %}
+            -<br>
+            {% endif %}
+            Published date:
+            {{ book.published_date }} <br>
+            Category(s):
+            {% if book.categories  %}
+                {% for category in book.categories %}
+                    {{ category.name}}<br>
+                {% endfor %}
+            {% else %}
+            -<br>
+            {% endif %}
+            Average rating: {{ book.average_rating }}<br>
+            Ratings count: {{ book.ratings_count }}<br><br></td>
+    </tr>
+</table>
+
+{% endblock %}

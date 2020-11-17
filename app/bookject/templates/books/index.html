@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+<h2>Bookject</h2>
+<h3>Simple book API</h3>
+<a href="{% url 'books:list' %}">List of books</a>
+{% endblock %}

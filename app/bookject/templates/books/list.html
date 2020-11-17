@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+<h2>Bookject</h2>
+<h3>Simple book API</h3>
+
+{% if books %}
+    <b>Books</b>
+    {% for book in books %}
+    <table>
+        <tr>
+            <td>{{ book.title }}</td>
+            <td><a href="{% url 'books:single' book_id=book.book_id %}">Link</a><br></td>
+        </tr>
+    </table>
+    {% endfor %}
+{% else %}
+No books found
+{% endif %}
+
+{% endblock %}

@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('bookjet-admin/', admin.site.urls),
-    path('',  include('bookject.books.url'), name='books'),
+    path('',  include('bookject.books.urls', 'books')),
 ]
 
 if settings.DEBUG:

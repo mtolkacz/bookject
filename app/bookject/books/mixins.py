@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+from django.db.models import Q
 from django.http import Http404
 from rest_framework.generics import get_object_or_404
 from rest_framework import status
@@ -13,6 +14,76 @@ from .exceptions import BooksNotFound, IncorrectPublishedDateOfBook, BookDoesNot
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
+
+
+class BookAuthorNameMixin(object):
+    def filter_by_author_name(self, queryset):
+        """
+        Return filtered queryset by author's name
+        Allow multiple filtering
+        """
+        authors_names = self.request.GET.getlist('author')
+        if authors_names:
+            queries = [Q(authors__name__icontains=author_name) for author_name in authors_names]
+            query = queries.pop()
+            for item in queries:
+                query |= item
+            queryset = queryset.filter(query)
+        return queryset
+
+
+class BookPublishedDateMixin(object):
+    def filter_by_published_date(self, queryset):
+        """
+        Return filtered queryset by published_date
+        Allow multiple filtering
+        """
+        published_dates = self.request.GET.getlist('published_date')
+        if published_dates:
+            years = []
+            try:
+                for date in published_dates:
+                    year = int(date)
+                    if datetime.now().year >= year > 0:
+                        years.append(year)
+                if years:
+                    queryset = queryset.filter(published_date__year__in=years)
+                else:
+                    raise BooksNotFound
+            except (TypeError, ValueError):
+                raise BooksNotFound
+        return queryset
+
+
+class BookListMixin(BookPublishedDateMixin, BookAuthorNameMixin):
+    def filter_queryset(self, queryset):
+        """
+        Run filters on queryset
+        """
+        queryset = self.filter_by_published_date(queryset)
+        queryset = self.filter_by_author_name(queryset)
+        return queryset
+
+    def get_queryset(self):
+        """
+        Get queryset and apply custom publish date filter
+        """
+        queryset = self.model.objects.all()
+        queryset = self.filter_queryset(queryset)
+
+        return queryset
+
+
+class BookRetrieveMixin:
+    def get_object(self, *args, **kwargs):
+        """
+        Get
+        """
+        book_id = kwargs['book_id']
+        try:
+            return self.model.objects.get(book_id=book_id)
+        except self.model.DoesNotExist:
+            raise BooksNotFound
 
 
 class BookDownloader:
@@ -201,7 +272,6 @@ class BookDownloader:
         """
         Create many2many relation objects of the books
         """
-
         self.create_m2m_book_authors()
         self.create_m2m_book_categories()
 
@@ -213,9 +283,10 @@ class BookDownloader:
         try:
             # Try to get book object to update - raise an exception failed
             updated_book = get_object_or_404(Book, book_id=self.book_dict['book_id'])
-
             # Update modified book
-            updated_book.save(update_fields=list(self.book_dict.keys()))
+            for attr, value in self.book_dict.items():
+                setattr(updated_book, attr, value)
+            updated_book.save()
 
             # Update m2m relations
             updated_book.authors.set(self.authors)
@@ -227,11 +298,9 @@ class BookDownloader:
 
     def manage_not_existing_book(self):
         """
-        Manage not existing book:
+        Manage not existing yet book:
         - create new book and add to bulk manager
         - commit with bulk create if batch size is exceeded
-        - create authors and categories ManyToMany relation objects and add to M2M lists
-        - commit authors and categories objects if books objects has been committed
         """
         # Create new Book object, wait with commit
         new_book = Book(**self.book_dict)
@@ -270,7 +339,10 @@ class BookDownloader:
         self.book_category_m2m_list += [[new_book, category] for category in self.categories]
 
     def perform_create(self):
-
+        """
+        Create/update books on two ways.
+        Logic split into operations on existing and new books duo performance improvement
+        """
         self.set_books()  # Try to get books from source and raise BooksNotFound if failed
         self.set_books_ids()  # Get ids of all new books
         self.set_existing_books()  # Mark already existing books
@@ -296,6 +368,8 @@ class BookDownloader:
         # New objects could be already created if batch size was reached
         if self.not_existing:
             self.create_new_books()
+
+            # Create authors and categories ManyToMany relation objects and add to M2M lists.
             self.create_m2m_objects()
 
 
@@ -310,7 +384,6 @@ class BookCreateUpdateMixin(object):
         Get and set POST request "q" parameter.
         Return value of parameter if success, else raise InvalidQueryParameterInBody exception
         """
-
         query = request.POST.get("q", "")
         if not query:
             raise InvalidQueryParameterInBody
@@ -321,9 +394,11 @@ class BookCreateUpdateMixin(object):
         Process request to create/update books.
         Return Response with status code 201 if success.
         """
-
         # Get query "q" parameter. May raise InvalidQueryParameterInBody exception
         query = self.get_parameter(request)
 
+        # Proper create/update operation
         BookDownloader(query=query).perform_create()
+
+        # Return success response with 201 code if books has been created/updated
         return Response(f"Success: q={query}", status=status.HTTP_201_CREATED)

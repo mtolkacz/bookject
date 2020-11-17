@@ -44,7 +44,9 @@ class BookParserException(APIException):
 
 
 class IncorrectPublishedDateOfBook(APIException):
-    """Raised when response deserialization has been failed"""
+    """
+    Raised when response deserialization has been failed
+    """
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = 'Incorrect published date for book'
 

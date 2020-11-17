@@ -1,3 +1,10 @@
 from django.shortcuts import render
 
-# Create your views here.
+from . import apiv1
+
+
+def index(request):
+    """
+    A homepage of Bookject - Simple book API
+    """
+    return render(request, 'books/index.html')

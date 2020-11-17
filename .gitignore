@@ -181,3 +181,9 @@ dmypy.json
 # custom
 /test.py
 /load_lib.sh
+# exclude everything
+/app/bookject/static/*
+# exception to the rule
+!/app/bookject/static/.gitkeep
+
+/copy/

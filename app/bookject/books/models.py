@@ -54,4 +54,3 @@ class Book(models.Model):
     def get_ids_which_already_exists(ids):
         return Book.objects.filter(book_id__in=ids).values_list('book_id', flat=True)
 
-
