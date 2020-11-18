@@ -25,7 +25,7 @@ class BookSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super(BookSerializer, self).to_representation(instance)
-        representation['published_date'] = instance.published_date.strftime('%Y-%m-%d')
+        representation['published_date'] = instance.published_date.strftime('%Y')
         return representation
 
     class Meta:

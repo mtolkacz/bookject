@@ -26,7 +26,7 @@ class Book(models.Model):
     authors = models.ManyToManyField(
         Author,
     )
-    published_date = models.DateTimeField()
+    published_date = models.DateField()
     # If published_date contains only year then set to False, else if full date then True
     exact_date = models.BooleanField(
         default=False,
